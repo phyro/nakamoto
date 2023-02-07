@@ -4,7 +4,28 @@ This document will attempt to describe the theoretical aspect of new way to reac
 
 ### Voting
 
-It seems every consensus must have some kind of voting in it because at least one person must agree with an opinion to reach a consensus and an opinion is a form of a vote. Nakamoto consensus is no exception here and comes with the assumption that the majority of the citizens voting are honest. In the [previous article](consensus.md), the citizens were a resource that lived inside the system i.e. the coins. Who are the voting citizens in Nakamoto consensus? In Nakamoto, there are no predefined citizens. Rather than having these defined in advance, a voting citizen is a computation on one of the steps and the step on which the computation is made is their vote to march forward from. Since a general computation can be performed by anyone, this means that the set of potential voters is unbounded. To agree on the next step we'll take, we simply have to prove we collected roughly N votes to move forward and describe the next step we're going to make. 
+It seems every consensus must have some kind of voting in it because at least one person must agree with an opinion to reach a consensus and an opinion is a form of a vote. Nakamoto consensus is no exception here and comes with the assumption that the majority of the citizens voting are honest. In the [previous article](consensus.md), the citizens were a resource that lived inside the system i.e. the coins. Who are the voting citizens in Nakamoto consensus? In Nakamoto, there are no predefined citizens. Rather than having these defined in advance, a voting citizen is a computation that lives outside of the system. Interestingly, if we define a vote as selecting one option out of many, computations can cast a vote too. In Nakamoto consensus, a computation casts a vote by committing to a choice in a hash. Every hash attempt points at a specific block with `hashPrevBlock` which, by our voting definition, acts as a vote from which step we want to march forward from. Through this field, we express what we believe our last position is from which we want to make a new step. Since a general computation can be performed by anyone, this means that the set of potential voters is unbounded. To agree on the next step we'll take, we simply have to prove we collected roughly N votes to move forward and describe the next step we're going to make.
+
+##### Technical example of miner voting
+
+Consider the following two simplified hash attempts:
+
+```
+# Miner 1 computes the following hash attempt
+sha256(
+    hashPrevBlock=000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0,
+    hashMerkleRoot=6ed4ec2272678103df71336332890900030d663004a59fc236eaa8c2594375b6,
+    nonce=0104620d
+)
+
+# Miner 2 computes the following hash attempt
+sha256(
+    hashPrevBlock=000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0,
+    hashMerkleRoot=14748a85136e8860cba2bcff8a87cdd18d2d9fc252cbb2e3c18b160276d067ea,
+    nonce=aed0d47d
+)
+```
+The two hash attempts share one value, the `hashPrevBlock`. This field selects a single block out of many possible choices, which is exactly our vote definition meaning we have two votes for `000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0`.
 
 ### Proving collected votes
 
@@ -36,14 +57,20 @@ Every vote we print is a computation and every computation takes some time and e
 
 ### Verification of common reality
 
-Any person can look up at the sky and find the largest energy ball. This is their reality. There's no need to communicate with anyone as long as people are looking at the same sky. The sky here is P2P communication of (PoW, step) pairs and not communication on how these came to existence. If this communication graph gets disconnected into two different (disconnected) graphs A and B, people in A will be looking at a different sky than those in B and thus will see different energy balls and have a different view of reality. This can go on for some time, but once the two skies get connected, there will be only a single objective reality which is the largest energy ball in the joint sky. As mentioned, there are no trust assumptions involving people, we instead trust the energy we see.
+Any person can look up at the sky and find the largest energy ball. This is their reality. There's no need to communicate with anyone as long as people are looking at the same sky. The sky here is P2P communication of (PoW, step) pairs and not communication on how these came to existence. If this communication graph gets separated into two different (disconnected) graphs A and B, people in A will be looking at a different sky than those in B and thus will see different energy balls and have a different view of reality. This can go on for some time, but once the two skies get connected, there will be only a single objective reality which is the largest energy ball in the joint sky. As mentioned, there are no trust assumptions involving people, we instead trust the energy we see.
+
+### Physics and security
+
+Now that we understand the traditional and Nakamoto consensus, we can see some differences. One notable difference is that the set of voters in the Nakamoto consensus is unbounded and permissionless. However, there is an even more important difference. In the traditional consensus, the resource that represents a voter lives within the system and is not tied to our physical world. The logic of computer programs usually has no significant connection to the physical world other than being executed there. Proof of Stake consensus follows this tradition, where the state and its history defines who has the right to vote at a certain time through some logic rules.
+
+On the other hand, Nakamoto consensus takes a drastically different approach. Instead of listening to specific identities, it listens to short mathematical proofs that demonstrate real-world energy was invested to make the next step. This is particularly interesting because by following verifiable statements about energy usage in the real world, our system inherits security from the laws of physics, which may be one of the few constrained systems we have no idea how to exploit. This makes Nakamoto consensus an open and trustless system, as transactions are secured by mathematics (Elliptic Curve Cryptography) and the consensus is secured by physics (through a high energy cost). We can now see that hashes solve two problems simultaneously. They serve as both a voting mechanism and a security parameter for consensus and should not be considered a waste of computational resources. Nakamoto consensus presents a novel and exciting approach by using real-world energy as a resource to reach and secure global consensus, making it a worthwhile experiment.
 
 ### Summary
 
 We managed to reach consensus on the next step without needing to publicly share our opinion about the step or having to trust other people regarding statements about steps. We simply look in the sky and a bigger energy ball appears that describes the step. This approach is simpler and more resilient, but it introduces the concept of probabilistic finality of the step where we can never really know with 100% certainty that the reality we look at is the real one. This probability however becomes exceedingly small as time passes. I think both approaches to consensus are valuable in their own ways because they have different properties, but we may want to have the most resilient variant for a global store of value.
 
 
-**It doesn't seem that PoS makes PoW obsolete. Keep calm and look up.**
+**PoS doesn't make PoW obsolete. Their security models are fundamentally so different that it makes little sense to even compare them. Keep calm and look up.**
 
 
 ![sky](sky.png)
