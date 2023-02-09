@@ -6,30 +6,31 @@ This document will attempt to describe the theoretical aspect of new way to reac
 
 It seems every consensus must have some kind of voting in it because at least one person must agree with an opinion to reach a consensus and an opinion is a form of a vote. Nakamoto consensus is no exception here and comes with the assumption that the majority of the citizens voting are honest. In the [previous article](consensus.md), the citizens were a resource that lived inside the system i.e. the coins. Who are the voting citizens in Nakamoto consensus? In Nakamoto, there are no predefined citizens. Rather than having these defined in advance, a voting citizen is a computation that lives outside of the system. Interestingly, if we define a vote as selecting one option out of many, computations can cast a vote too. In Nakamoto consensus, a computation casts a vote by committing to a choice in a hash. Every hash attempt points at a specific block with `hashPrevBlock` which, by our voting definition, acts as a vote from which step we want to march forward from. Through this field, we express what we believe our last position is from which we want to make a new step. Since a general computation can be performed by anyone, this means that the set of potential voters is unbounded. To agree on the next step we'll take, we simply have to prove we collected roughly N votes to move forward and describe the next step we're going to make.
 
-##### Technical example of miner voting
+##### Example of miner voting
 
 Consider the following two simplified hash attempts:
 
 ```
 # Miner 1 computes the following hash attempt
-sha256(
-    hashPrevBlock=000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0,
-    hashMerkleRoot=6ed4ec2272678103df71336332890900030d663004a59fc236eaa8c2594375b6,
+newStep = sha256(
+    prevStep=000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0,
+    newData=6ed4ec2272678103df71336332890900030d663004a59fc236eaa8c2594375b6,
     nonce=0104620d
 )
 
 # Miner 2 computes the following hash attempt
-sha256(
-    hashPrevBlock=000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0,
-    hashMerkleRoot=14748a85136e8860cba2bcff8a87cdd18d2d9fc252cbb2e3c18b160276d067ea,
+newStep = sha256(
+    prevStep=000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0,
+    newData=14748a85136e8860cba2bcff8a87cdd18d2d9fc252cbb2e3c18b160276d067ea,
     nonce=aed0d47d
 )
 ```
-The two hash attempts share one value, the `hashPrevBlock`. This field selects a single block out of many possible choices, which is exactly our vote definition meaning we have two votes for `000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0`.
+The two hash attempts share one value, the `prevStep` (`hashPrevBlock` in Bitcoin). This field selects a single block out of many possible choices, which is exactly our vote definition. This means these two one-way computations act as two votes for `000000000000000000044142f90385fa7bf93cee2b406205ef3cfe118f66a9d0`. Each attempt suggests a different `newData` that describes the actual body of the data we add to the chain (`hashMerkleRoot` in Bitcoin). If the vote (labeled `newStep` above) starts with enough zeros, it serves as a proof we collected enough votes and is thus also the next step we take.
 
-### Proving collected votes
 
-We mentioned a citizen vote is a computation. Let's assume the computations we're doing output a random sequence of bits which magically commits to a specific next step to take. Since the result is a random sequence of zeros and ones, we can define the rareness score for each vote by looking at the leading zeros. On average we will get 1 leading zero in 2 attempts, 2 zeros in 4 attempts, 4 zeros in 16 attempts, and so on. If we find a vote that is so rare that it must have taken roughly N votes to find it, then this can be used as proof that we did in fact make roughly N such computations, or in other words, we collected roughly N votes to continue from this step. Anyone can verify the output of this computation is a sequence of leading zeros and we know it couldn't have been gamed because the result of the computation is provably random. We can also verify the step the vote describes follows our rules. This proof is what we call a PoW (Proof of Work) which, once found, is shared with everyone else. We have solved how we collect and verify votes, but we have a slight issue. Since the number of computations one can perform is not limited, it seems we're prone to a [Sybil attack](https://en.wikipedia.org/wiki/Sybil_attack#:~:text=A%20Sybil%20attack%20is%20a%20type%20of%20attack%20on%20a%20computer%20network%20service%20in%20which%20an%20attacker%20subverts%20the%20service%27s%20reputation%20system%20by%20creating%20a%20large%20number%20of%20pseudonymous%20identities%20and%20uses%20them%20to%20gain%20a%20disproportionately%20large%20influence.) because we can create as many voting citizens as we like by running the computation on a step multiple times. There are more problems. Nothing prevents us from getting two different valid proofs the votes were collected that suggest a different step forward. Since both steps forward are valid and thus possible to make, we may come to a situation where people have a different view of reality. To have a consensus on a common reality, we have to find a way for everyone to agree on the same steps.
+### Counting votes
+
+We now know a voter is a one-way computation. But this voter actually does two things at once. It not only casts a vote for a step (hashPrevBlock), but also suggests a possible next step to take (hashMerkleRoot). Since the result of a one-way computation is a random sequence of zeros and ones, we can define the rareness score for each vote by looking at the leading zeros. On average we will get 1 leading zero in 2 attempts, 2 zeros in 4 attempts, 4 zeros in 16 attempts, and so on. If we find a vote that is so rare that it must have taken roughly N votes to find it, then this can be used as a proof that we did in fact make roughly N such computations, or in other words, we collected roughly N votes to continue from this step (hashPrevBlock). Anyone can verify the output of this computation is a sequence of leading zeros and we know it couldn't have been gamed because the result of the computation is provably random. We can also verify the suggested next step (hashMerkleRoot) the vote describes follows our rules. This proof is what we call a PoW (Proof of Work) which, once found, is shared with everyone else. We have solved how we collect and verify votes, but we have a slight issue. Since the number of computations one can perform is not limited, it seems we're prone to a [Sybil attack](https://en.wikipedia.org/wiki/Sybil_attack#:~:text=A%20Sybil%20attack%20is%20a%20type%20of%20attack%20on%20a%20computer%20network%20service%20in%20which%20an%20attacker%20subverts%20the%20service%27s%20reputation%20system%20by%20creating%20a%20large%20number%20of%20pseudonymous%20identities%20and%20uses%20them%20to%20gain%20a%20disproportionately%20large%20influence.) because we can create as many voting citizens as we like by running the computation on a step multiple times. There are more problems. Nothing prevents us from getting two different valid proofs the votes were collected that suggest a different step forward. Since both steps forward are valid and thus possible to make, we may come to a situation where people have a different view of reality. To have a consensus on a common reality, we have to find a way for everyone to agree on the same steps.
 
 ### Convergence to a common reality
 
@@ -44,6 +45,7 @@ This kind of consensus might seem like a relatively obscure and bad way to reach
 
 Everything in Nakamoto consensus is achieved purely through independent computations without interaction. This asocial way of voting may be what makes it more resilient than other consensus mechanisms because you can't capture the citizens. Even if you manage to stop the majority of the vote producers, new ones could just as easily get spun up. Once the PoW (rare vote) is found, the proof simply appears in the sky where anyone can see it and decide whether they take it as a part of reality or not. The fact that parties don't communicate and that the citizens are undefined allows us to add/remove vote-producing machines (often specialized computers) on the fly.
 
+**NOTE: The only way to have voting on such a massive scale as Bitcoin (270 exa votes per second) is if we somehow avoid sharing all the votes and counting them one by one. This is only possible if our voting system has very strong privacy. The counting method we described above does exactly that and is a form of private probabilistic counting that doesn't require us to keep or share a vote unless it starts with a specific number of leading zeros.**
 
 ### How many votes do we need to collect?
 
